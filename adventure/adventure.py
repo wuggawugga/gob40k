@@ -244,7 +244,7 @@ class Adventure(commands.Cog):
             user_id
         ).clear()  # This will only ever touch the separate currency, leaving bot economy to be handled by core.
 
-    __version__ = "3.4.2"
+    __version__ = "3.4.3"
 
     def __init__(self, bot: Red):
         self.bot = bot
@@ -314,6 +314,7 @@ class Adventure(commands.Cog):
         self._adventure_countdown = {}
         self._rewards = {}
         self._reward_message = {}
+        self._loss_message = {}
         self._trader_countdown = {}
         self._current_traders = {}
         self._curent_trader_stock = {}
@@ -866,13 +867,13 @@ class Adventure(commands.Cog):
 
             backpack_pages = await c.get_backpack(rarity=rarity, slot=slot, show_delta=show_diff, equippable=True)
             if backpack_pages:
-                await BaseMenu(
+                await BackpackMenu(
                     source=SimpleSource(backpack_pages),
+                    help_command=self.commands_equipable_backpack,
                     delete_message_after=True,
                     clear_reactions_after=True,
                     timeout=60,
                 ).start(ctx=ctx)
-                return
             else:
                 return await smart_embed(ctx, _("You have no equippable items that match this query."),)
 
@@ -883,31 +884,17 @@ class Adventure(commands.Cog):
     ):
         """Complex backpack management tools.
 
-        **--slot** - Accepts multiple slots (use quotes if there are spaces in a slot name).
-        **--rarity** - Accepts multiple rarities (use quotes if there are spaces in a rarity name).
-        **--set** - Accepts multiple sets (use quotes if there are spaces in the set name).
-        **--equip** - If used will only show equippable items.
-        **--diff** - If used will show the stat delta compared to what you currently have equipped.
-        **--match** - Accepts a string, no quotes are needed. Will attempt to match items to this string.
-        ​ ​ ​  ​**--icase** - If `--match` and `--icase` are used, matches will not be case sensitive.
-        For the following arguments:
-        ​ ​ These arguments accept 1 or 2 numbers. If 1 is passed it is treated as an equal match, if 2 then it is a range.
-        ​ ​ ​ ​ **--str**
-        ​ ​ ​ ​ **--int**
-        ​ ​ ​ ​ **--cha**
-        ​ ​ ​ ​ **--luc**
-        ​ ​ ​ ​ **--dex**
-        ​ ​ ​ ​ **--lvl**
-        ​ ​ ​ ​ **--deg** (Only works on `[p]cbackpack show`)
-
-        Subcommands: These take the same arguments listed above.
+        Please read the usage instructions [here](https://github.com/aikaterna/gobcog/blob/master/docs/cbackpack.md)
         """
 
     @commands_cbackpack.command(name="show")
     async def commands_cbackpack_show(
         self, ctx: commands.Context, *, query: BackpackFilterParser,
     ):
-        """This shows the contents of your backpack."""
+        """This shows the contents of your backpack.
+
+        Please read the usage instructions [here](https://github.com/aikaterna/gobcog/blob/master/docs/cbackpack.md)
+        """
         if not await self.allow_in_dm(ctx):
             return await smart_embed(ctx, _("This command is not available in DM's on this bot."))
         try:
@@ -934,6 +921,8 @@ class Adventure(commands.Cog):
 
         This will provide a chance for a chest,
         or the item might break while you are handling it...
+
+        Please read the usage instructions [here](https://github.com/aikaterna/gobcog/blob/master/docs/cbackpack.md)
         """
         if self.in_adventure(ctx):
             return await smart_embed(
@@ -1018,7 +1007,9 @@ class Adventure(commands.Cog):
     async def commands_cbackpack_sell(self, ctx: commands.Context, *, query: BackpackFilterParser):
         """Sell items from your backpack.
 
-        Forged, Set and Event items cannot be sold using this command.
+        Forged items cannot be sold using this command.
+
+        Please read the usage instructions [here](https://github.com/aikaterna/gobcog/blob/master/docs/cbackpack.md)
         """
 
         if self.in_adventure(ctx):
@@ -1871,13 +1862,11 @@ class Adventure(commands.Cog):
                     await bank.set_balance(ctx.author, 0)
 
                 await open_msg.edit(
-                    content=(
-                        box(
-                            _("{c}, congratulations on your rebirth.\nYou paid {bal}.").format(
-                                c=self.escape(ctx.author.display_name), bal=humanize_number(withdraw),
-                            ),
-                            lang="css",
+                    content=box(
+                        _("{c}, congratulations on your rebirth.\nYou paid {bal}.").format(
+                            c=self.escape(ctx.author.display_name), bal=humanize_number(withdraw),
                         ),
+                        lang="css",
                     ),
                     embed=None,
                 )
@@ -2063,7 +2052,10 @@ class Adventure(commands.Cog):
                 )
                 msg_list.append(box(msg, lang="css"))
                 count += 1
-            await menu(ctx, msg_list, DEFAULT_CONTROLS, page=index)
+            if msg_list:
+                await BaseMenu(
+                    source=SimpleSource(msg_list), delete_message_after=True, clear_reactions_after=True, timeout=60,
+                ).start(ctx=ctx, page=index)
 
     @loadout.command(name="equip", aliases=["load"], cooldown_after_parsing=True)
     @commands.cooldown(rate=1, per=600, type=commands.BucketType.user)
@@ -2412,7 +2404,7 @@ class Adventure(commands.Cog):
 
     @adventureset.command(name="clear")
     @commands.is_owner()
-    async def clear_user(self, ctx: commands.Context, *, users: commands.Greedy[discord.User]):
+    async def clear_user(self, ctx: commands.Context, users: commands.Greedy[discord.User]):
         """[Owner] Lets you clear multiple users character sheets."""
         for user in users:
             await self.config.user(user).clear()
@@ -3278,11 +3270,17 @@ class Adventure(commands.Cog):
         modifier_penalty_cha = -0.01 * base_cha // 10
         modifier = sum([modifier_bonus_int, modifier_bonus_luck, modifier_penalty_cha, modifier_penalty_str, modifier])
         modifier = max(0.001, modifier)
-        newatt = round((int(item1.att) + int(item2.att)) * modifier)
-        newdip = round((int(item1.cha) + int(item2.cha)) * modifier)
-        newint = round((int(item1.int) + int(item2.int)) * modifier)
-        newdex = round((int(item1.dex) + int(item2.dex)) * modifier)
-        newluck = round((int(item1.luck) + int(item2.luck)) * modifier)
+
+        base_int = int(item1.int) + int(item2.int)
+        base_cha = int(item1.cha) + int(item2.cha)
+        base_att = int(item1.att) + int(item2.att)
+        base_dex = int(item1.dex) + int(item2.dex)
+        base_luck = int(item1.luck) + int(item2.luck)
+        newatt = int((base_att * modifier) + base_att)
+        newdip = int((base_cha * modifier) + base_cha)
+        newint = int((base_int * modifier) + base_int)
+        newdex = int((base_dex * modifier) + base_dex)
+        newluck = int((base_luck * modifier) + base_luck)
         newslot = random.choice(ORDER)
         if newslot == "two handed":
             newslot = ["right", "left"]
@@ -5320,7 +5318,7 @@ class Adventure(commands.Cog):
         You play by reacting with the offered emojis.
         """
 
-        if ctx.guild.id in self._sessions:
+        if ctx.guild.id in self._sessions and self._sessions[ctx.guild.id].finished is False:
             adventure_obj = self._sessions[ctx.guild.id]
             link = adventure_obj.message.jump_url
 
@@ -5368,7 +5366,9 @@ class Adventure(commands.Cog):
         try:
             reward, participants = await self._simple(ctx, adventure_msg, challenge)
             await self.config.guild(ctx.guild).cooldown.set(time.time())
+            self._sessions[ctx.guild.id].finished = True
         except Exception as exc:
+            self._sessions[ctx.guild.id].finished = True
             await self.config.guild(ctx.guild).cooldown.set(0)
             log.exception("Something went wrong controlling the game", exc_info=exc)
             while ctx.guild.id in self._sessions:
@@ -5413,6 +5413,11 @@ class Adventure(commands.Cog):
             if extramsg:
                 for msg in pagify(extramsg, page_length=1900):
                     await smart_embed(ctx, msg, success=True)
+        if ctx.message.id in self._loss_message:
+            extramsg = self._loss_message.pop(ctx.message.id)
+            if extramsg:
+                for msg in pagify(extramsg, page_length=1900):
+                    await smart_embed(ctx, msg, success=False)
         while ctx.guild.id in self._sessions:
             del self._sessions[ctx.guild.id]
 
@@ -5424,6 +5429,8 @@ class Adventure(commands.Cog):
             error,
             (commands.CheckFailure, commands.UserInputError, commands.DisabledCommand, commands.CommandOnCooldown,),
         ):
+            if ctx.guild.id in self._sessions:
+                self._sessions[ctx.guild.id].finished = True
             while ctx.guild.id in self._sessions:
                 del self._sessions[ctx.guild.id]
             handled = False
@@ -6119,9 +6126,11 @@ class Adventure(commands.Cog):
             attack, diplomacy, magic, run_msg = await self.handle_run(
                 ctx.guild.id, attack, diplomacy, magic, shame=True
             )
+            if run_msg:
+                run_msg = _("It's a shame for the following adventurers...\n{run_msg}\n").format(run_msg=run_msg)
 
             output = _(
-                "All adventures prepared for an epic adventure, but they soon realise all this treasure was unprotected!\nIt's a shame for the following adventurers\n{run_msg}\n{text}"
+                "All adventures prepared for an epic adventure, but they soon realise all this treasure was unprotected!\n{run_msg}{text}"
             ).format(text=text, run_msg=run_msg,)
             output = pagify(output, page_length=1900)
             await calc_msg.delete()
@@ -6263,16 +6272,13 @@ class Adventure(commands.Cog):
                 for (user, loss) in repair_list:
                     if user not in temp_repair:
                         loss_list.append(
-                            _("**{user}** used {loss} {currency_name}").format(
-                                user=self.escape(user.display_name),
-                                loss=humanize_number(loss),
-                                currency_name=currency_name,
+                            _("\n{user} used {loss} {currency_name}").format(
+                                user=user.mention, loss=humanize_number(loss), currency_name=currency_name,
                             )
                         )
                         temp_repair.append(user)
-                result_msg += _("\n{loss_list} to repay a passing cleric that unfroze the group.").format(
-                    loss_list=humanize_list(loss_list)
-                )
+                if loss_list:
+                    self._loss_message[ctx.message.id] = humanize_list(loss_list).strip()
             return await smart_embed(ctx, result_msg)
         if session.miniboss and not slain and not persuaded:
             lost = True
@@ -6306,20 +6312,22 @@ class Adventure(commands.Cog):
                 for (user, loss) in repair_list:
                     if user not in temp_repair:
                         loss_list.append(
-                            f"**{self.escape(user.display_name)}** used {humanize_number(loss)} {currency_name}"
+                            _("\n{user} used {loss} {currency_name}").format(
+                                user=user.mention, loss=humanize_number(loss), currency_name=currency_name,
+                            )
                         )
                         temp_repair.append(user)
+                if loss_list:
+                    self._loss_message[ctx.message.id] = humanize_list(loss_list).strip()
             miniboss = session.challenge
             special = session.miniboss["special"]
             result_msg += _(
-                "The **{miniboss}'s** "
-                "{special} was countered, but he still managed to kill you."
-                "\n{loss_l} to repay a passing "
-                "cleric that resurrected the group."
-            ).format(miniboss=miniboss, special=special, loss_l=humanize_list(loss_list))
+                "The **{miniboss}'s** " "{special} was countered, but he still managed to kill you."
+            ).format(miniboss=miniboss, special=special)
         amount = 1 * session.monster_stats
         amount *= (hp + dipl) if slain and persuaded else hp if slain else dipl
         amount += int(amount * (0.25 * people))
+        currency_name = await bank.get_currency_name(ctx.guild)
         if people == 1:
             if slain:
                 group = fighters_final_string if len(fight_list) == 1 else wizards_final_string
@@ -6378,17 +6386,45 @@ class Adventure(commands.Cog):
                     for (user, loss) in repair_list:
                         if user not in temp_repair:
                             loss_list.append(
-                                f"**{self.escape(user.display_name)}** used {humanize_number(loss)} {currency_name}"
+                                _("\n{user} used {loss} {currency_name}").format(
+                                    user=user.mention, loss=humanize_number(loss), currency_name=currency_name,
+                                )
                             )
                             temp_repair.append(user)
-                repair_text = "" if not loss_list else f"{humanize_list(loss_list)} " + _("to repair their gear.")
+                    if loss_list:
+                        self._loss_message[ctx.message.id] = humanize_list(loss_list).strip()
                 options = [
-                    _("No amount of diplomacy or valiant fighting could save you.\n{}").format(repair_text),
-                    _("This challenge was too much for one hero.\n{}").format(repair_text),
-                    _("You tried your best, but the group couldn't succeed at their attempt.\n{}").format(repair_text),
+                    _("No amount of diplomacy or valiant fighting could save you."),
+                    _("This challenge was too much for one hero."),
+                    _("You tried your best, but the group couldn't succeed at their attempt."),
                 ]
                 text = random.choice(options)
         else:
+            if run_list:
+                users = run_list
+                for user in users:
+                    try:
+                        c = await Character.from_json(self.config, user, self._daily_bonus)
+                    except Exception as exc:
+                        log.exception("Error with the new character sheet", exc_info=exc)
+                        continue
+                    if c.bal > 0:
+                        multiplier = 1 / 3
+                        if c._dex < 0:
+                            dex = min(1 / abs(c._dex), 1)
+                        else:
+                            dex = max(c._dex // 10, 1)
+                        multiplier = multiplier / dex
+                        loss = round(c.bal * multiplier)
+                        if loss > c.bal:
+                            loss = c.bal
+                        if user not in [u for u, t in repair_list]:
+                            repair_list.append([user, loss])
+                            if user not in [u for u, t in repair_list]:
+                                if c.bal > loss:
+                                    await bank.withdraw_credits(user, loss)
+                                else:
+                                    await bank.set_balance(user, 0)
             if slain and persuaded:
                 if len(pray_list) > 0:
                     god = await self.config.god_name()
@@ -6529,52 +6565,25 @@ class Adventure(commands.Cog):
                                 await bank.withdraw_credits(user, loss)
                             else:
                                 await bank.set_balance(user, 0)
-                if run_list:
-                    users = run_list
-                    for user in users:
-                        try:
-                            c = await Character.from_json(self.config, user, self._daily_bonus)
-                        except Exception as exc:
-                            log.exception("Error with the new character sheet", exc_info=exc)
-                            continue
-                        if c.bal > 0:
-                            multiplier = 1 / 3
-                            if c._dex < 0:
-                                dex = min(1 / abs(c._dex), 1)
-                            else:
-                                dex = max(c._dex // 10, 1)
-                            multiplier = multiplier / dex
-                            loss = round(c.bal * multiplier)
-                            if loss > c.bal:
-                                loss = c.bal
-                            if user not in [u for u, t in repair_list]:
-                                repair_list.append([user, loss])
-                                if user not in [u for u, t in repair_list]:
-                                    if c.bal > loss:
-                                        await bank.withdraw_credits(user, loss)
-                                    else:
-                                        await bank.set_balance(user, 0)
-                loss_list = []
-                if len(repair_list) > 0:
-                    temp_repair = []
-                    for (user, loss) in repair_list:
-                        if user not in temp_repair:
-                            loss_list.append(
-                                _("**{user}** used {loss} {currency_name}").format(
-                                    user=self.escape(user.display_name),
-                                    loss=humanize_number(loss),
-                                    currency_name=currency_name,
-                                )
-                            )
-                            temp_repair.append(user)
-                repair_text = "" if not loss_list else _("{} to repair their gear.").format(humanize_list(loss_list))
                 options = [
-                    _("No amount of diplomacy or valiant fighting could save you.\n{}").format(repair_text),
-                    _("This challenge was too much for the group.\n{}").format(repair_text),
-                    _("You tried your best, but couldn't succeed.\n{}").format(repair_text),
+                    _("No amount of diplomacy or valiant fighting could save you."),
+                    _("This challenge was too much for the group."),
+                    _("You tried your best, but couldn't succeed."),
                 ]
                 text = random.choice(options)
-
+        loss_list = []
+        if len(repair_list) > 0:
+            temp_repair = []
+            for (user, loss) in repair_list:
+                if user not in temp_repair:
+                    loss_list.append(
+                        _("\n{user} used {loss} {currency_name}").format(
+                            user=user.mention, loss=humanize_number(loss), currency_name=currency_name,
+                        )
+                    )
+                    temp_repair.append(user)
+            if loss_list:
+                self._loss_message[ctx.message.id] = humanize_list(loss_list).strip()
         output = f"{result_msg}\n{text}"
         output = pagify(output, page_length=1900)
         img_sent = session.monster["image"] if not session.easy_mode else None
@@ -6698,7 +6707,7 @@ class Adventure(commands.Cog):
                     critlist.append(user)
                     crit_bonus = (random.randint(5, 20)) + (rebirths * 2)
                     crit_str = f"{self.emojis.crit} {humanize_number(crit_bonus)}"
-                if c.heroclass["ability"]:
+                if c.heroclass["name"] == "Berserker" and c.heroclass["ability"]:
                     base_bonus = (random.randint(1, 10) + 5) * (rebirths // 2)
                 base_str = f"{self.emojis.crit}️ {humanize_number(base_bonus)}"
                 attack += int((roll + base_bonus + crit_bonus + att_value) / pdef)
@@ -6774,7 +6783,7 @@ class Adventure(commands.Cog):
                     critlist.append(user)
                     crit_bonus = (random.randint(5, 20)) + (rebirths * 2)
                     crit_str = f"{self.emojis.crit} {humanize_number(crit_bonus)}"
-                if c.heroclass["ability"]:
+                if c.heroclass["name"] == "Wizard" and c.heroclass["ability"]:
                     base_bonus = (random.randint(1, 10) + 5) * (rebirths // 2)
                     base_str = f"{self.emojis.magic_crit}️ {humanize_number(base_bonus)}"
                 magic += int((roll + base_bonus + crit_bonus + int_value) / mdef)
@@ -7017,7 +7026,7 @@ class Adventure(commands.Cog):
                     crit_bonus = (random.randint(5, 20)) + (rebirths * 2)
                     crit_str = f"{self.emojis.crit} {crit_bonus}"
 
-                if c.heroclass["ability"]:
+                if c.heroclass["name"] == "Bard" and c.heroclass["ability"]:
                     base_bonus = (random.randint(1, 10) + 5) * (rebirths // 2)
                 base_str = f"🎵 {humanize_number(base_bonus)}"
                 diplomacy += int((roll + base_bonus + crit_bonus + dipl_value) / cdef)
