@@ -83,7 +83,7 @@ LUCK = re.compile(r"(-?\d*) (luck)")
 DEX = re.compile(r"(-?\d*) (dex(?:terity)?)")
 SLOT = re.compile(r"(head|neck|chest|gloves|belt|legs|boots|left|right|ring|charm|twohanded)")
 RARITY = re.compile(r"(normal|rare|epic|legend(?:ary)?|asc(?:ended)?|set|forged|event)")
-RARITIES = ("normal", "rare", "epic", "legendary", "ascended", "set", "event")
+RARITIES = ("normal", "rare", "epic", "legendary", "ascended", "set", "event", "forged")
 DEG = re.compile(r"(-?\d*) degrade")
 LEVEL = re.compile(r"(-?\d*) (level|lvl)")
 PERCENTAGE = re.compile(r"^(\d*\.?\d+)(%?)")
@@ -591,6 +591,8 @@ class Character(Item):
                 continue
             if item.name in item_names:
                 continue
+            if not item.set:
+                continue
             if set_name and set_name != item.set:
                 continue
             if item.set and item.set not in set_names:
@@ -814,9 +816,9 @@ class Character(Item):
         for _loop_counter in range(rebirths):
             if rebirths >= 20:
                 maxlevel += REBIRTH_STEP
-            elif rebirths >= 10:
+            elif rebirths > 10:
                 maxlevel += 10
-            elif rebirths < 10:
+            elif rebirths <= 10:
                 maxlevel += 5
             rebirths -= 1
         return min(maxlevel, 10000)
@@ -1885,6 +1887,14 @@ class EquipableItemConverter(Converter):
         )
         lookup_e = list(i for x, i in c.backpack.items() if argument == str(i) and str(i) not in equipped_items)
 
+        already_lookup = list(
+            i for x, i in c.backpack.items() if no_markdown.lower() in x.lower() and str(i) in equipped_items
+        )
+        already_lookup_m = list(
+            i for x, i in c.backpack.items() if argument.lower() == str(i).lower() and str(i) in equipped_items
+        )
+        already_lookup_e = list(i for x, i in c.backpack.items() if argument == str(i) and str(i) in equipped_items)
+
         _temp_items = set()
         for i in lookup:
             _temp_items.add(str(i))
@@ -1900,6 +1910,8 @@ class EquipableItemConverter(Converter):
         elif len(lookup_m) == 1:
             return lookup_m[0]
         elif len(lookup) == 0 and len(lookup_m) == 0:
+            if any(x for x in [already_lookup, already_lookup_m, already_lookup_e]):
+                raise BadArgument(_("`{}` matches the name of an item already equipped.").format(argument))
             raise BadArgument(_("`{}` doesn't seem to match any items you own.").format(argument))
         else:
             lookup = list(i for x, i in c.backpack.items() if str(i) in _temp_items)
