@@ -169,4 +169,4 @@ Sometimes a travelling merchant cart will roll past offering new items for adven
 
 ### Adventure Alerts
 
-If you want your users to be able to sign up for pings when specific monster types/potential boss monsters appear, install `adventureralert` by TrustyJAID (https://github.com/TrustyJAID/Trusty-cogs).
+If you want your users to be able to sign up for pings when specific monster types/potential boss monsters appear, install `adventurealert` by TrustyJAID (https://github.com/TrustyJAID/Trusty-cogs).
