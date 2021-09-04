@@ -7,7 +7,7 @@ In this RPG cog originally by locastan, TrustyJAID, Draper, and myself have craf
 
 `[p]` in this readme represents your bot's command prefix. Whenever you see a command in this guide, you can receive more detailed help by using `[p]help` with the command name.
 
-To start an adventure, use `[p]adventure` or `[p]a`. Reactions will appear underneath the text of the adventure randomly selected for your group. Use 🗡 to attack the monster, 🗨 to talk with the monster, 🛐 to pray to the god Herbert (customisable). The more people helping the easier it is to defeat the monster and acquire its loot. 
+To start an adventure, use `[p]adventure` or `[p]a`. Reactions will appear underneath the text of the adventure randomly selected for your group. Use 🗡 to attack the monster, ⚡ to use magic on the monster, 🗨 to talk with the monster, 🛐 to pray to the god Herbert (customisable). The more people helping the easier it is to defeat the monster and acquire its loot. 
 
 
 ## Hero/Heroclass
