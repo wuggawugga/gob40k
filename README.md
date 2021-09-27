@@ -1,13 +1,13 @@
 # Adventure
 
-In this RPG cog originally by locastan, TrustyJAID, Draper, and myself have crafted a fun idle game you can play with the members of your servers.
+In this RPG cog originally by locastan - TrustyJAID, Draper, and myself have crafted a fun idle game you can play with the members of your servers.
 
 
 ## Basic Usage
 
 `[p]` in this readme represents your bot's command prefix. Whenever you see a command in this guide, you can receive more detailed help by using `[p]help` with the command name.
 
-To start an adventure, use `[p]adventure` or `[p]a`. Reactions will appear underneath the text of the adventure randomly selected for your group. Use 🗡 to attack the monster, ⚡ to use magic on the monster, 🗨 to talk with the monster, 🛐 to pray to the god Herbert (customisable). The more people helping the easier it is to defeat the monster and acquire its loot. 
+To start an adventure, use `[p]adventure` or `[p]a`. Reactions will appear underneath the text of the adventure randomly selected for your group. Use 🗡 to attack the monster, ✨ to use magic on the monster, 🗨 to talk with the monster, 🛐 to pray to the god Herbert (customizable). The more people helping the easier it is to defeat the monster and acquire its loot. 
 
 
 ## Hero/Heroclass
@@ -35,7 +35,7 @@ Rebirths provide not only a base bonus to attacks as Berserkers grow stronger, b
 Use the `[p]bless` command when fighting in an adventure.  
 * Bless your groups' damage by invoking your deity. The more people that are participating, the harder the deity smites their foes... if they choose to help.  
 Preferred stat: INT  
-Every 15 rebirths a Cleric recieves another +1 to their succesful prayer damage multiplier.  
+Every 15 rebirths a Cleric recieves another +1 to their successful prayer damage multiplier.  
   
 **Rangers** can gain a special pet, which can find items and give reward bonuses.  
 Use the `[p]pet` command to try to catch a pet companion. Pet catching can be spammy, so `[p]pet` can be run in DMs.  
@@ -87,7 +87,7 @@ Preferred stat: INT
 
 `[p]rebirth`
 * Players progress through a rebirth prestige leveling system alongside regular player levels. For every rebirth, the level cap is increased. Players will need to watch their level cap on the `[p]stats` output and rebirth when needed - hitting level cap during an adventure will also alert the player at the end during the loot recap.
-* On a rebirth, a server admin or bot-owner settable percentage of gold is taken from the player (default at 90%)
+* On a rebirth, a server admin or bot-owner settable percentage of gold is taken from the player (default at 90%).
 * Legendary and Ascended items have a quality called Durability/Degrade Level (DEG) that is reduced by 1 every time a rebirth occurs. When this number hits 0, they are destroyed on rebirth.
 * Set items never degrade.
 * Normal, rare, and epic items are destroyed by the chaotic powers of rebirth.
@@ -165,7 +165,7 @@ Copy the default folder in `<datapath>/cogs/CogManager/adventure/data/` to the c
 ### The Trader Cart System
 `[p]adventureset cart <#channel>`
 
-Sometimes a travelling merchant cart will roll past offering new items for adventurers to buy or loot chests to purchase. Admins/Bot owners must set this cart channel first before carts will appear. Carts have roughly a 3h return time, but this is also configurable.
+Sometimes a traveling merchant cart will roll past offering new items for adventurers to buy or loot chests to purchase. Admins/Bot owners must set this cart channel first before carts will appear. Carts have roughly a 3h return time, but this is also configurable.
 
 ### Adventure Alerts
 
