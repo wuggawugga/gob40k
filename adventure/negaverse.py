@@ -315,7 +315,7 @@ class Negaverse(AdventureMixin):
                     negachar=negachar,
                 )
                 if looted:
-                    loss_msg += _(" **{negachar}** also stole the following items\n\n{items}").format(
+                    loss_msg += _(" **{negachar}** also stole the following items:\n\n{items}").format(
                         items=looted, negachar=negachar
                     )
                 await nega_msg.edit(
